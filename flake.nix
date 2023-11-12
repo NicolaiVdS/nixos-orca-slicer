@@ -2,25 +2,32 @@
   description = "OrcaSlicer flake";
 
   inputs = {
-    nixpkgs.url = "nixpkgs"; # We want to use packages from the binary cache
-    flake-utils.url = "github:numtide/flake-utils";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };
 
-  outputs = inputs@{ self, nixpkgs, flake-utils, ... }:
-  flake-utils.lib.eachSystem [ "x86_64-linux" ] (system: let
-    pkgs = nixpkgs.legacyPackages.${system};
-  in rec {
-    packages.orca-slicer = pkgs.callPackage ./default.nix {
-      inherit (pkgs.gst_all_1) gstreamer gst-plugins-base gst-plugins-bad;
-    };
-
-    legacyPackages = packages;
-
-    defaultPackage = packages.orca-slicer;
-
-    devShell = pkgs.mkShell {
-      buildInputs = with pkgs; [ git ];
-    };
-
-  });
+  outputs = { self, nixpkgs }:
+  let
+    forAllSystems = function:
+      nixpkgs.lib.genAttrs [
+        "x86_64-linux"
+        "x86_64-darwin"
+        "aarch64-linux"
+      ] (system:
+          function (import nixpkgs {
+            inherit system;
+      }));
+  in 
+  {
+    packages = forAllSystems (pkgs: {
+      default = pkgs.stdenv.mkDerivation {
+        name = "OrcaSlicer";
+        src = "./.":
+        buildPhase = ''
+          mkdir -p $out/bin 
+          chmod +x orca-slicer
+          cp orca-slicer $out/bin
+        '';
+      };
+    });
+  };
 }
