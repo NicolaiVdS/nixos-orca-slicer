@@ -21,7 +21,7 @@
     packages = forAllSystems (pkgs: {
       default = pkgs.stdenv.mkDerivation {
         name = "OrcaSlicer";
-        src = "./.":
+        src = "./.";
         buildPhase = ''
           mkdir -p $out/bin 
           chmod +x orca-slicer
